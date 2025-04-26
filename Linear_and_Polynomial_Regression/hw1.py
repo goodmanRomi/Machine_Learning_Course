@@ -220,7 +220,7 @@ def find_best_learning_rate(X_train, y_train, X_val, y_val, iterations):
     
     for eta in etas:
         np.random.seed(42)
-        theta = np.random.random(size=X_train.shape[1])
+        theta = np.random.random(size=X_train.shape[1])*0.01
         theta = gradient_descent_stop_condition(X_train,y_train,theta,eta,iterations)[0]
         validation_loss = compute_loss(X_val,y_val, theta)
         eta_dict[eta] = validation_loss
@@ -252,38 +252,37 @@ def forward_feature_selection(X_train, y_train, X_val, y_val, best_eta, iteratio
     #####c######################################################################
     # TODO: Implement the function and find the best eta value.             #
     ###########################################################################
-    np.random.seed(42) 
     
     n_features = X_train.shape[1]
     feature_remain_to_check = list(range(X_train.shape[1]))
 
-    X_train,y_train=preprocess(X_train,y_train)
-    X_val,y_val=preprocess(X_val,y_val)
+    #X_train,y_train=preprocess(X_train,y_train)
+    #X_val,y_val=preprocess(X_val,y_val)
 
     X_train=apply_bias_trick(X_train)
     X_val=apply_bias_trick(X_val)
     
 
-    while len(selected_features)<5: 
+    while len(selected_features)<5 and feature_remain_to_check: 
         best_mse = float("inf")
         best_feature = None
 
         for feature in feature_remain_to_check:
-            curr_feature_train = X_train[:, [0]+ selected_features + [feature]] #"take all rows (:) and only the indexes of the features in the array + new feature columns"
-            x_val_sub=X_val[:, [0]+selected_features+[feature]]
-
-            theta = np.zeros(curr_feature_train.shape[0])
-            theta = gradient_descent_stop_condition(curr_feature_train,y_train,theta,best_eta,iterations,epsilon=1e-8)[0]
-            
-            #From the validation data, give me only the columns (features) that match the current trial feature set.
+            curr_coloums=[0]+ selected_features + [feature]
+            curr_feature_train = X_train[:, curr_coloums] # bias + selected + candidate 'feature'
+            theta = gradient_descent_stop_condition(curr_feature_train,y_train, np.random.random(size=curr_feature_train.shape[1])*0.01 ,best_eta, iterations, epsilon=1e-8)[0]    
+            x_val_sub=X_val[:, curr_coloums]
             mse = compute_loss(x_val_sub,y_val,theta)
-
+            
             if mse < best_mse:
                 best_mse = mse  #feature that gave me the minimal mse until this point
                 best_feature = feature
 
-        selected_features.append(best_feature)
-        feature_remain_to_check.remove(best_feature)
+        if best_feature is not None:
+            selected_features.append(best_feature)
+            feature_remain_to_check.remove(best_feature)
+        else:
+            break
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -300,24 +299,28 @@ def create_square_features(df):
     - df_poly: The input data with polynomial features added as a dataframe
                with appropriate feature names
     """
-    df_poly = df.copy()
-    
-    if df.empty: # if the dataframe is empty
+    if df.empty or df is None: # if the dataframe is empty
         return df 
     
-    original_columns = df.columns
+    df_poly = df.copy()
+    original_columns = list(df.columns)
 
-    ###########################################################################
-     # Add the squared features to copied data frame
-    for col in original_columns:
-        df_poly[f"{col}^2"] = df[col] ** 2
+    # Dictionary to hold new features
+    new_features = {}
 
-    # Add the multiplication of every feature with every other feature to copied data frame
-    for i in range(df.shape[1]):
-        col1 = original_columns[i] #initialized oce
-        for j in range(i + 1, df.shape[1]): #startes from next to i and give parwise for each column after
-            col2 = original_columns[j]
-            df_poly[f"{col1}*{col2}"] = df[col1] * df[col2]
+    for i in range(len(original_columns)):
+        feature_i = original_columns[i]
+        new_features[f"{feature_i}^2"] = df[feature_i] ** 2
+        
+        for j in range(i + 1, len(original_columns)):
+            feature_j = original_columns[j]
+            new_features[feature_i + "*" + feature_j] = df[feature_i] * df[feature_j]
+
+    # Convert dictionary to DataFrame
+    new_features_df = pd.DataFrame(new_features)
+
+    # Concatenate all at once
+    df_poly = pd.concat([df_poly, new_features_df], axis=1)
     ###########################################################################
     ###########################################################################
     #                             END OF YOUR CODE                            #
