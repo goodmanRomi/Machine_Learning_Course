@@ -62,6 +62,38 @@ chi_table = {1: {0.5 : 0.45,
               0.05 : 19.68,
               0.0001 : 100000}}
 
+def calc_proportion(data, column_index=0):
+    """
+    Calculate the proportions of each value in a column.
+    
+    Parameters:
+    -----------
+    data : numpy.ndarray
+        The dataset as a NumPy array
+    column_index : int or None
+        The index of the column to analyze
+        If None, defaults to the last column (assumed to be the target/class)
+    
+    Returns:
+    --------
+    dict
+        A dictionary with values as keys and their proportions as values
+    """
+    # Default to the last column if no column_index is provided
+    if column_index is None:
+        column_index = -1  # -1 refers to the last column in NumPy indexing
+
+    column_data = data[:, column_index]
+
+    # Get unique values and their counts
+    unique_values, counts = np.unique(column_data, return_counts=True)
+
+    # Calculate proportions
+    total_samples = len(column_data)
+    proportions = {value: count/total_samples for value, count in zip(unique_values, counts)}
+
+    return proportions
+
 def calc_gini(data):
     """
     Calculate gini impurity measure of a dataset.
@@ -74,13 +106,16 @@ def calc_gini(data):
     """
     gini = 0.0
     ###########################################################################
-    # TODO: Implement the function.                                           #
+    # TODO: Implement the function.  
+    # 1 - sum of all sqaured proportions
     ###########################################################################
-    pass
+    proportions=np.array(list(calc_proportion(data,-1).values()))
+    gini=1-np.sum(np.square(proportions))
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
     return gini
+
 
 def calc_entropy(data):
     """
@@ -94,9 +129,12 @@ def calc_entropy(data):
     """
     entropy = 0.0
     ###########################################################################
-    # TODO: Implement the function.                                           #
+    # TODO: Implement the function.
     ###########################################################################
-    pass
+    class_proportions=np.array(list(calc_proportion(data,-1).values()))
+    p = class_proportions[class_proportions > 0]
+    entropy=-np.sum(p*np.log(p))
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
