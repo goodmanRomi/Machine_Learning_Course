@@ -402,8 +402,7 @@ class DecisionTree:
             # If not a leaf node, recursively split children
             if not node.terminal:
                 for child in node.children:
-                    self._build_subtree(child)
-                    node.calc_feature_importance(len(self.data))
+                    _build_subtree(child)
         
         def _feature_importance(node):
             node.calc_feature_importance(len(self.data))
@@ -413,8 +412,8 @@ class DecisionTree:
                 for child in node.children:
                     _feature_importance(child)
 
-        self._build_subtree(self.root)
-        self._feature_importacne(self.root)    
+        _build_subtree(self.root)
+        _feature_importance(self.root)    
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
