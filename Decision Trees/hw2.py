@@ -215,7 +215,7 @@ class DecisionNode:
          
         parent_impurity = self.impurity_func(self.data) # Calculate the impurity of the parent node
 
-        total_samples = len(self.data) #total number of samples in this node 
+        total_samples = len(self.data) #total number of samples in this node(count of all data points that have reached this node)
         
         # Calculate weighted sum of children impurities - will be calculating for each subgroup and add all to get the sum
         weighted_child_impurity = 0
@@ -235,7 +235,13 @@ class DecisionNode:
             weighted_child_impurity+=weight*subset_impurity #Add weighted impurity to the sum
             
         impurity_reduction=parent_impurity-weighted_child_impurity #formula to calculate infogain
-
+        """
+        Information Gain tends to favor features with many unique values. 
+        Gain Ratio corrects this bias by normalizing the Information Gain with a term called Split Information.
+        The Gain Ratio penalizes features that split the data into many subsets, 
+        thus correcting the bias of Information Gain toward such features
+        
+        """
         #if we are using gain ratio and impurity func is entropy:
         if self.gain_ratio and self.impurity_func==calc_entropy: 
             split_info=0 #calculate the split info
@@ -273,7 +279,17 @@ class DecisionNode:
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        if self.terminal or self.feature == -1:
+            self.feature_importance = 0
+            return
+    
+        # Calculate the node's relative weight
+        node_weight = len(self.data) / n_total_sample
+        
+        # Calculate goodness of split for the selected feature
+        goodness, _ = self.goodness_of_split(self.feature)
+
+        self.feature_importance=goodness*node_weight       
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -289,11 +305,61 @@ class DecisionNode:
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        #halting conditions:
+        if self.depth>=self.max_depth: #we wont split if we reached the maximum allowed depth
+            self.terminal = True
+            return
+
+        unique_labels=np.unique(self.data[:,-1]) #if all samples are the same lable than the node is pure and therefore there is nothing to split
+        if len(unique_labels)==1:
+            self.terminal=True
+            return
+        
+        #checking best feature to split upon:
+        best_feature=-1
+        best_goodness=-float('inf')
+        best_groups={}
+
+        #loop over each feather (all coloums excpet the last col which is the label's col)
+        for feature in range(self.data.shape[1] -1):
+            #calculate goodness of split of that feature
+            goodness,groups=self.goodness_of_split(feature)
+
+            #check each time if value is better, otherwise discard
+            if goodness>best_goodness:
+                best_goodness=goodness
+                best_feature=feature
+                best_groups=groups
+        #if none of the feature give us a good split, we mark this as termial ie leaf
+
+        if best_feature==-1 or best_goodness<=0:
+            self.terminal=True
+            return
+
+        #otherwise, we split according to the feature found
+        self.feature=best_feature
+        
+        #create child nodes for each value of the best feature
+        for value,subset in best_groups.items():
+            if len(subset)==0: #skip if subset is empty
+                continue
+        
+            #create a new child node with the subset data
+            child=DecisionNode(
+                data=subset, 
+                impurity_func=self.impurity_func, 
+                depth=self.depth+1, 
+                chi=self.chi, 
+                max_depth=self.max_depth, 
+                gain_ratio=self.gain_ratio
+            )
+        
+            #now we add this child to the node's children's list:
+            self.add_child(child,value)
+            
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
-
                     
 class DecisionTree:
     def __init__(self, data, impurity_func, feature=-1, chi=1, max_depth=1000, gain_ratio=False):
@@ -319,7 +385,36 @@ class DecisionTree:
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        """
+        we first create the root,
+        recursivly split the tree unitl leaves are pure or no info_gain
+        
+        """
+        #initiallizing the root node using the entire trainig data
+        self.root=DecisionNode(data=self.data, impurity_func=self.impurity_func, chi=self.chi,
+                               max_depth=self.max_depth, gain_ratio=self.gain_ratio)
+
+        #helper function to recursivley split nodes. recives node as input which is the curr node to process. 
+        def _build_subtree(node):
+            #call split func we build prior on curr node. in split it checks halting
+            node.split()
+            
+            # If not a leaf node, recursively split children
+            if not node.terminal:
+                for child in node.children:
+                    self._build_subtree(child)
+                    node.calc_feature_importance(len(self.data))
+        
+        def _feature_importance(node):
+            node.calc_feature_importance(len(self.data))
+
+            # If not a leaf node, recursively calculate for children
+            if not node.terminal:
+                for child in node.children:
+                    _feature_importance(child)
+
+        self._build_subtree(self.root)
+        self._feature_importacne(self.root)    
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
