@@ -215,39 +215,46 @@ class DecisionNode:
          
         parent_impurity = self.impurity_func(self.data) # Calculate the impurity of the parent node
 
-        # Calculate weighted sum of children impurities
+        total_samples = len(self.data) #total number of samples in this node 
+        
+        # Calculate weighted sum of children impurities - will be calculating for each subgroup and add all to get the sum
         weighted_child_impurity = 0
-        total_samples = len(self.data)
 
+        # Split the data based on feature values
         for val in feature_values: 
             subset = self.data[self.data[:, feature] == val] # Create a subset of data where the feature has this value
             groups[val] = subset 
 
-            if len(subset)==0:#skip when the subset is empty
+            if len(subset)==0: #skip when the subset is empty
                 continue
 
-            # Calculate weight (proportion of samples in this subset)
-            weight = len(subset) / total_samples
-            subset_impurity=self.impurity_func(subset)
-            weighted_child_impurity+=weight*subset_impurity
+            weight = len(subset) / total_samples # Calculate weight (proportion of samples in this subset)
+
+            subset_impurity=self.impurity_func(subset) #calculate the impurity of this specific subgroup 
             
-            impurity_reduction=parent_impurity-weighted_child_impurity
+            weighted_child_impurity+=weight*subset_impurity #Add weighted impurity to the sum
+            
+        impurity_reduction=parent_impurity-weighted_child_impurity #formula to calculate infogain
 
-            if self.gain_ratio and self.impurity_func==calc_entropy:
-                split_info=0
-                for val in feature_values:
-                    subset=groups[val]
-                    if len(subset)==0:
-                        continue
-                    weight=len(subset)/total_samples
-                    split_info-=weight*np.log(weight)
+        #if we are using gain ratio and impurity func is entropy:
+        if self.gain_ratio and self.impurity_func==calc_entropy: 
+            split_info=0 #calculate the split info
+            for val in feature_values:
+                subset=groups[val]
+                if len(subset)==0:
+                    continue
                 
-
-                if split_info>0:
+                weight=len(subset)/total_samples 
+                
+                split_info-=weight*np.log(weight) #using log base 2 for entropy
+                
+                if split_info > 0: #to avoid deviding by 0 (undefined)
                     goodness=impurity_reduction/split_info
                 else:
                     goodness=0
-
+        #if we are not using gain ratio and impurity func is simply the impurity reduction:
+        else: 
+            goodness = impurity_reduction
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
