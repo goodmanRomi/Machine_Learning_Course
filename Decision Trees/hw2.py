@@ -403,17 +403,12 @@ class DecisionTree:
             if not node.terminal:
                 for child in node.children:
                     _build_subtree(child)
-        
-        def _feature_importance(node):
+
+            # Calculate feature importance for this node
+            # (This happens during the recursive "unwinding")
             node.calc_feature_importance(len(self.data))
 
-            # If not a leaf node, recursively calculate for children
-            if not node.terminal:
-                for child in node.children:
-                    _feature_importance(child)
-
         _build_subtree(self.root)
-        _feature_importance(self.root)    
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
