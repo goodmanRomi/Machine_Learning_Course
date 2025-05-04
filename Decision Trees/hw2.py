@@ -169,7 +169,10 @@ class DecisionNode:
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        labels=self.data[:,-1]
+        values, counts = np.unique(labels, return_counts=True)
+        pred=str(values[np.argmax(counts)])
+
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -184,7 +187,8 @@ class DecisionNode:
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        self.children.append(node)
+        self.children_values.append(val)
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -206,7 +210,44 @@ class DecisionNode:
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        
+        feature_values = np.unique(self.data[:, feature]) # Get all unique values in the feature column
+         
+        parent_impurity = self.impurity_func(self.data) # Calculate the impurity of the parent node
+
+        # Calculate weighted sum of children impurities
+        weighted_child_impurity = 0
+        total_samples = len(self.data)
+
+        for val in feature_values: 
+            subset = self.data[self.data[:, feature] == val] # Create a subset of data where the feature has this value
+            groups[val] = subset 
+
+            if len(subset)==0:#skip when the subset is empty
+                continue
+
+            # Calculate weight (proportion of samples in this subset)
+            weight = len(subset) / total_samples
+            subset_impurity=self.impurity_func(subset)
+            weighted_child_impurity+=weight*subset_impurity
+            
+            impurity_reduction=parent_impurity-weighted_child_impurity
+
+            if self.gain_ratio and self.impurity_func==calc_entropy:
+                split_info=0
+                for val in feature_values:
+                    subset=groups[val]
+                    if len(subset)==0:
+                        continue
+                    weight=len(subset)/total_samples
+                    split_info-=weight*np.log(weight)
+                
+
+                if split_info>0:
+                    goodness=impurity_reduction/split_info
+                else:
+                    goodness=0
+
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
