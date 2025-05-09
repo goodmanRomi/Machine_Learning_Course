@@ -422,12 +422,43 @@ class DecisionTree:
                     of this vector is the label of the instance.
      
         Output: the prediction of the instance.
+         
+        self.data = data # the data instances associated with the node
+        self.terminal = False # True iff node is a leaf
+        self.feature = feature # column index of feature/attribute used for splitting the node
+        self.pred = self.calc_node_pred() # the class prediction associated with the node
+        self.depth = depth # the depth of the node
+        self.children = [] # the children of the node (array of DecisionNode objects)
+        self.children_values = [] # the value associated with each child for the feature used for splitting the node
+        self.max_depth = max_depth # the maximum allowed depth of the tree
+        self.chi = chi # the P-value cutoff used for chi square pruning
+        self.impurity_func = impurity_func # the impurity function to use for measuring goodness of a split
+        self.gain_ratio = gain_ratio # True iff GainRatio is used to score features
+        self.feature_importance = 0
+        
         """
         pred = None
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        curr_node=self.root
+        
+        # Traverse the tree until reaching a leaf node
+        while not curr_node.terminal:
+            feature_index=curr_node.feature #feature according to which we split the node at this stage
+            feature_val=instance[feature_index]
+            
+             # If no matching branch is found (unseen feature value)
+            if feature_val not in curr_node.children_values:
+                break 
+            
+            for i, val in enumerate(curr_node.children_values):
+                if feature_val==val:
+                    #we move to this child
+                    curr_node=curr_node.children[i]
+                    break 
+
+        node=curr_node 
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -441,12 +472,26 @@ class DecisionTree:
         - dataset: the dataset on which the accuracy is evaluated
      
         Output: the accuracy of the decision tree on the given dataset (%).
+       
         """
         accuracy = 0
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        correct_prediction=0
+        total_instances=len(dataset)
+
+        for instance in dataset:
+            predicted_val=self.predict(instance)
+        
+            actual_val=str(instance[-1]) # convert to str for consistent comparison
+
+            if predicted_val==actual_val:
+                correct_prediction+=1
+        
+        # Calculate accuracy as a percentage
+        accuracy=(correct_prediction/total_instances)*100
+
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
