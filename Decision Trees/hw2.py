@@ -294,6 +294,53 @@ class DecisionNode:
         #                             END OF YOUR CODE                            #
         ###########################################################################
     
+    def calculate_chi_square(self,feature,groups):
+        """
+        Calculate the chi-square statistic for a given feature split:
+        X²(S,A) = Σ_(v∈Values(A)) Σ_(j=1)^k ((|S_v,j| - |S_v|p_j)²) / (|S_v|p_j)
+        
+        Input:
+        - feature: the feature index being evaluated
+        - groups: dictionary mapping feature values to data subsets
+        
+        Returns:
+        - chi_square: the chi-square statistic
+        """
+        
+        # get unique class labels (j values from 1 to k)(here i only have 2)
+        label_values = np.unique(self.data[:, -1])
+            
+        # calculate proportions
+        parent_class_proportions = {}
+        total_samples = len(self.data)
+        for label_val in label_values:
+            total = np.sum(self.data[:, -1] == label_val) #
+            parent_class_proportions[label_val] = total / total_samples # 
+    
+        # Calculate chi-square statistic
+        chi_square = 0.0
+
+        # First sigma: sum over all feature values (v∈Values(A))
+        for value, subset in groups.items():
+            subset_size = len(subset)  # |S_v|
+            
+            if subset_size == 0: # Skip empty subsets
+                continue       
+                            
+            # Second sigma: sum over all class labels (j=1 to k)
+            for label_val in label_values:
+                # Calculate observed frequency |S_v,j|
+                actual = np.sum(subset[:, -1] == label_val)
+                expected = subset_size * (parent_class_proportions[label_val])
+                # Skip if expected is very close to 0
+                if expected < 1e-10:
+                    continue
+                
+                # Add chi-square term: ((|S_v,j| - |S_v|p_j)²) / (|S_v|p_j)            
+                chi_square += ((actual - expected) ** 2) / expected
+    
+        return chi_square
+        
     def split(self):
         """
         Splits the current node according to the self.impurity_func. This function finds
@@ -305,7 +352,7 @@ class DecisionNode:
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        #halting conditions:
+        #halting conditions and supports pruning by depth:
         if self.depth>=self.max_depth: #we wont split if we reached the maximum allowed depth
             self.terminal = True
             return
@@ -335,8 +382,32 @@ class DecisionNode:
         if best_feature==-1 or best_goodness<=0:
             self.terminal=True
             return
+        
+        # Apply chi-square pruning
+        if self.chi<1: #only halt according to chi test if chi < 1. 
+            
+            # Calculate degrees of freedom 
+            # deg_freedom = (k - 1)(|Values(A)| - 1)
+            k = len(unique_labels)  # Number of classes in this node
+            values_A = len(best_groups)  # Number of unique values for best feature
+            deg_freedom = (k - 1) * (values_A - 1)  # Degrees of freedom
 
-        #otherwise, we split according to the feature found
+            deg_freedom = min(deg_freedom, max(chi_table.keys())) #deg_freedom is within the bounds of our chi_table
+
+            # Calculate chi-square statistic for this spcific split
+            #X²(S,A) := Σ_(v∈Values(A)) Σ_(j=1)^k ((|S_v,j| - |S_v|p_j)²) / (|S_v|p_j)
+            chi_statistic = self.calculate_chi_square(best_feature, best_groups)
+
+            # Get the critical chi-square value from the table
+            critical_value = chi_table[deg_freedom][self.chi]
+        
+            # Check if chi-square is significant
+            if chi_statistic <= critical_value:
+                # Split is NOT significant, make this a leaf node
+                self.terminal = True
+                return
+
+        # If we get here, either chi test passed or chi=1 (no pruning)
         self.feature=best_feature
         
         #create child nodes for each value of the best feature
@@ -360,6 +431,7 @@ class DecisionNode:
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
+
                     
 class DecisionTree:
     def __init__(self, data, impurity_func, feature=-1, chi=1, max_depth=1000, gain_ratio=False):
@@ -502,7 +574,7 @@ def depth_pruning(X_train, X_validation):
     """
     Calculate the training and validation accuracies for different depths
     using the best impurity function and the gain_ratio flag you got
-    previously. 
+    previously. (Impurity Function: calc_entropy, gain_ratio Flag: True)
 
     Input:
     - X_train: the training data where the last column holds the labels
@@ -513,11 +585,21 @@ def depth_pruning(X_train, X_validation):
     training = []
     validation  = []
     root = None
+    # our best configuration: Entropy with Gain Ratio
+    impurity_func = calc_entropy
+    use_gain_ratio = True
     for max_depth in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        # Using calc_entropy as the best impurity function and gain_ratio=True
+        tree=DecisionTree(data=X_train,impurity_func=impurity_func,max_depth=max_depth,gain_ratio=use_gain_ratio )
+        tree.build_tree()
+        training_accuracy=tree.calc_accuracy(X_train)
+        validation_accuracy=tree.calc_accuracy(X_validation)
+
+        training.append(training_accuracy)
+        validation.append(validation_accuracy)
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -547,13 +629,43 @@ def chi_pruning(X_train, X_test):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    pass
+    # best configuration from previous experiments calc_entropy with gain_ratio=True
+    impurity_func = calc_entropy
+    use_gain_ratio = True
+
+    chi_vals=[1, 0.5, 0.25, 0.1, 0.05, 0.0001]
+    for chi_val in chi_vals:
+        tree=DecisionTree(data=X_train,impurity_func=impurity_func,chi=chi_val,gain_ratio=use_gain_ratio)
+        tree.build_tree()
+
+        training_accuracy=tree.calc_accuracy(X_train)
+        chi_training_acc.append(training_accuracy)
+
+        validation_accuracy=tree.calc_accuracy(X_test)
+        chi_validation_acc.append(validation_accuracy)
+        
+        depth.append(find_max_depth(tree.root))
+    
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
         
     return chi_training_acc, chi_validation_acc, depth
 
+def find_max_depth(node):
+    if node is None:
+        return 0
+
+    if node.terminal or len(node.children)==0:
+        return node.depth
+        
+    max_child_depth=0
+    for child in node.children:
+        child_depth=find_max_depth(child)
+        if child_depth > max_child_depth:
+            max_child_depth=child_depth
+
+    return max_child_depth
 
 def count_nodes(node):
     """
@@ -567,7 +679,17 @@ def count_nodes(node):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    pass
+    if node is None:
+        return 0
+    n_nodes=0
+    stack=[node]
+    while stack:
+        n_nodes+=1
+        curr_node=stack.pop()
+        if hasattr(curr_node, 'children') and curr_node.children:
+            for child in curr_node.children:
+                if child is not None:
+                    stack.append(child)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
