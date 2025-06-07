@@ -1,36 +1,5 @@
 import numpy as np
 from typing import Union
-import math
-
-def _calculate_sum_log_factorials(samples_arr):
-    """
-    helper function to calculate sum of log factorials using only numpy. 
-    efficiently handles the calc without needing scipy
-    
-    """
-    log_factorials=_calculate_log_factorial(samples_arr)
-    sum_x_factorials=np.sum(log_factorials)
-
-    return sum_x_factorials
-
-def _calculate_log_factorial(k):
-    """
-    helper function to calculate log factorials of a given k using only numpy. 
-    efficiently handles the calc without needing scipy
-    
-    """
-    max_val=np.max(k) if k.size>0 else 0
-    if max_val==0:
-        return np.zeros_like(k,dtype=float)
-    
-    # Create lookup table for log factorials: lookup[i] = log(i!)
-    lookup=np.zeros(max_val+1)
-    for i in range(1, max_val+1):
-        lookup[i]=lookup[i-1]+np.log(i)
-    
-    log_factorials=lookup[k]
-    
-    return log_factorials
 
 def poisson_log_pmf(k: Union[int, np.ndarray], rate: float) -> Union[float, np.ndarray]:
     """
@@ -44,37 +13,12 @@ def poisson_log_pmf(k: Union[int, np.ndarray], rate: float) -> Union[float, np.n
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    
-    #logP(K=k)=log(λ^k)+log(e^−λ)−log(k!)=klog(λ)−λ−log(k!)
-    #calculation log(k!) can be very inefficient for large k, so we use loggamma
-    
-    k_array=np.asarray(k)
-    
-    #ensure all values are non negative and valid ints. 
-    #k represents "how many events occured" so it can't be negative or partial
-    if np.any(k_array<0):
-        raise ValueError("All entries of k must be non negative ints for the Poisson PMF")
-    
-    if not np.all(np.mod(k_array,1)==0):
-        raise ValueError("All entires of k must be integers")
-    
-    k_array=k_array.astype(int) #saftey
-
-    #now we can compute log(k!)
-
-    log_k_factorial=_calculate_log_factorial(k_array)
-
-    #proceed to calculate the entire formula:k * log(rate) - rate - log(k!)
-
-    log_rate=np.log(rate) #scalar
-    log_p=k_array * log_rate - rate - log_k_factorial
-
-    
-    return log_p
-
+    pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+    return log_p
+
 
 def possion_analytic_mle(samples):
     """
@@ -86,27 +30,7 @@ def possion_analytic_mle(samples):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    samples_vec=np.asarray(samples)
-    
-    #validate dataset- non empty, valid entries, non negative and whole ints
-
-    if samples_vec.size==0:
-        raise ValueError("cannot compute Poisson MLE on empty set")
-    
-    if np.any(samples_vec<0):
-        raise ValueError("All counts must be nonnegatice for Poisson disterbution")
-    
-    if not np.all(np.mod(samples_vec,1)==0):
-        raise ValueError("All couts must be integers")
-
-    samples_vec=samples_vec.astype(int)
-
-
-    #computing sample mean in vectorized way:
-    #in exercise 2 in theoretical part we got lambda_hat = (1/n) * sum_i_to_n of x_i
-    lambda_hat=np.mean(samples_vec)
-
-    mean=lambda_hat
+    pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -127,18 +51,7 @@ def possion_confidence_interval(lambda_mle, n, alpha=0.05):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    
-    # computing z_{1 - α/2} = Φ⁻¹(1 - α/2) via scipy.stats.norm.ppf
-    z = norm.ppf(1-alpha/2) 
-
-    #estimating the standard error (SE) of λ̂ as sqrt(λ̂ / n)
-    se = (lambda_mle/n)**0.5 
-
-    lower_bound=lambda_mle - z * se
-    if lower_bound<0:
-        lower_bound=0.0
-    upper_bound = lambda_mle + z * se
-
+    pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -155,42 +68,11 @@ def get_poisson_log_likelihoods(samples, rates):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    samples_arr=np.asarray(samples)
-    rates_arr=np.asarray(rates)
-
-    #validating the sample 
-    if samples_arr.size==0:
-        raise ValueError("Data set must have at least one sample")
-    if np.any(samples_arr < 0):
-        raise ValueError("all values must be nonnegative")
-    if not np.all(np.mod(samples_arr,1)==0):
-        raise ValueError("all values ,ust be whole integers")
-    
-    samples_arr=samples_arr.astype(int)
-
-    if np.any(rates_arr<=0):
-        raise ValueError("all rate values must be positive")
-
-    #precomputing data-dependent constants 
-    #log L(λ; X) = (∑ x_i)·log(λ) – n·λ – ∑ log(x_i!)
-    n=samples_arr.shape[0]  # n = number of observations
-    total_count=np.sum(samples_arr)
-
-    sum_log_factorials=_calculate_sum_log_factorials(samples_arr)
-
-    #computing log-likylhood for each λ
-    # log L(λ; X) = total_count·log(λ) – n·λ – sum_log_factorials.
-    log_rates=np.log(rates_arr)
-    num1=total_count*log_rates
-    num2=n*rates_arr
-
-    likelihoods=num1-num2-sum_log_factorials 
-
+    pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
     return likelihoods
-
 
 class conditional_independence():
 
@@ -202,35 +84,35 @@ class conditional_independence():
         self.C = {0: 0.5, 1: 0.5}  # P(C=c)
 
         self.X_Y = {
-            (0, 0): 0.18,   # P(X=0, Y=0) = P(X=0,Y=0,C=0) + P(X=0,Y=0,C=1) = 0.18 + 0 = 0.18
-            (0, 1): 0.12,   # P(X=0, Y=1) = 0.12 + 0 = 0.12
-            (1, 0): 0.12,   # P(X=1, Y=0) = 0.12 + 0 = 0.12
-            (1, 1): 0.58    # P(X=1, Y=1) = 0.08 + 0.50 = 0.58
+            (0, 0): None,
+            (0, 1): None,
+            (1, 0): None,
+            (1, 1): None
         }  # P(X=x, Y=y)
 
         self.X_C = {
-            (0, 0): 0.30, # For C = 0:  P(X=0,C=0) = 0.18 + 0.12 = 0.30
-            (0, 1): 0.00, # For C = 1:  P(X=0,C=1) = 0 + 0 = 0
-            (1, 0): 0.20, # P(X=1,C=0) = 0.12 + 0.08 = 0.20
-            (1, 1): 0.50  # P(X=1,C=1) = 0 + 0.50 = 0.50
+            (0, 0): None,
+            (0, 1): None,
+            (1, 0): None,
+            (1, 1): None
         }  # P(X=x, C=c)
 
         self.Y_C = {
-            (0, 0): 0.30, # For C = 0:  P(Y=0,C=0) = 0.18 + 0.12 = 0.30
-            (0, 1): 0.00, # For C = 1:  P(Y=0,C=1) = 0 + 0 = 0
-            (1, 0): 0.20, # P(Y=1,C=0) = 0.12 + 0.08 = 0.20
-            (1, 1): 0.50  # P(Y=1,C=1) = 0 + 0.50 = 0.50
+            (0, 0): None,
+            (0, 1): None,
+            (1, 0): None,
+            (1, 1): None
         }  # P(Y=y, C=c)
 
         self.X_Y_C = {
-            (0, 0, 0): 0.18, # P(X=0,Y=0,C=0) = 0.5 * (0.6 * 0.6) = 0.5·0.36 = 0.18
-            (0, 0, 1): 0.00, # P(X=0,Y=0,C=1) = 0.5 * (0.0 * 0.0) = 0.5·0.0 = 0.0
-            (0, 1, 0): 0.12, # P(X=0,Y=1,C=0) = 0.5 * (0.6 * 0.4) = 0.5·0.24 = 0.12
-            (0, 1, 1): 0.00, # P(X=0,Y=1,C=1) = 0.5 * (0.0 * 1.0) = 0.5·0.0 = 0.0
-            (1, 0, 0): 0.12, # P(X=1,Y=0,C=0) = 0.5 * (0.4 * 0.6) = 0.5·0.24 = 0.12
-            (1, 0, 1): 0.00, # P(X=1,Y=0,C=1) = 0.5 * (1.0 * 0.0) = 0.5·0.0 = 0.0
-            (1, 1, 0): 0.08, # P(X=1,Y=1,C=0) = 0.5 * (0.4 * 0.4) = 0.5·0.16 = 0.08
-            (1, 1, 1): 0.50, # P(X=1,Y10,C=1) = 0.5 * (1.0 * 1.0) = 0.5·1 = 0.5
+            (0, 0, 0): None,
+            (0, 0, 1): None,
+            (0, 1, 0): None,
+            (0, 1, 1): None,
+            (1, 0, 0): None,
+            (1, 0, 1): None,
+            (1, 1, 0): None,
+            (1, 1, 1): None,
         }  # P(X=x, Y=y, C=c)
 
     def is_X_Y_dependent(self):
@@ -242,17 +124,8 @@ class conditional_independence():
         X_Y = self.X_Y
         ###########################################################################
         # TODO: Implement the function.                                           #
-        ###########################################################################    
-        
-        # check for any (x,y) if P(X=x, Y=y) != P(X=x)*P(Y=y):
-        for x in [0, 1]:
-            for y in [0, 1]:
-                if not np.isclose(X_Y[(x, y)], X[x] * Y[y]):
-                    return True  # we found marginal dependence
-                
-        # If we never returned True, then X and Y would be marginally independent.
-        return False        
-
+        ###########################################################################
+        pass
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -270,17 +143,7 @@ class conditional_independence():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        for c in [0, 1]:
-            for x in [0, 1]:
-                for y in [0, 1]:
-                    lhs = X_Y_C[(x, y, c)]/C[c]
-                    # as p(x|c) = P(X=x, C=c)/P(C=c), we can calc it as:
-                    p_x_given_c = X_C[(x, c)] / C[c]
-                    p_y_given_c = Y_C[(y, c)] / C[c]
-                    rhs = p_x_given_c * p_y_given_c
-                    if not np.isclose(lhs, rhs):
-                        return False  # violates the conditional independence
-        return True
+        pass
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -301,17 +164,7 @@ def normal_pdf(x, mean, std):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    
-    #converting x into a np arr to handle both scalars and arrays
-    x_arr=np.asarray(x,dtype=float)
-
-    # normalization constant: 1/sqrt(2*pi*std^2)
-    denomenator=std*np.sqrt(2.0*np.pi)
-
-    #exponent term- exp(-(x-mean)^2 / (2*std^2))
-    exponent=-0.5 * ((x_arr-mean)/std)**2
-
-    p=(1/denomenator)*np.exp(exponent)
+    pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -333,39 +186,7 @@ class NaiveNormalClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        # Split features vs. labels
-        X = dataset[:, :-1]   # shape = (N, d)
-        Y = dataset[:, -1]    # shape = (N,)
-
-        self.class_value = class_value
-
-        mask = (Y == class_value)
-        X_given_y = X[mask]      # shape = (N_y, d)
-        N_y = X_given_y.shape[0]
-        N_total = dataset.shape[0]
-
-        # PRIOR: P(Y = class_label) = N_y / N_total
-        self._prior = float(N_y) / float(N_total)
-
-        # num of features (d)
-        self._num_features = X.shape[1]
-
-        # If no training point has that label, then N_y = 0, so neither mean nor sigma is defined.
-        if N_y == 0:
-           raise ValueError(f"No training examples with value {class_value!r}.")
-        
-        # For each feature i = 0,..., d-1, we compute MLE mean and (population) standard deviation:
-        self._means = X_given_y.mean(axis=0)       # shape = (d,)
-        self._stds = X_given_y.std(axis=0, ddof=0) # shape = (d,)
-
-        # If theres a sigma_i that happens to be zero (all training values in that feature are identical),
-        # we assign a small positive num to avoide deviding by 0
-
-        zero_std_mask = (self._stds == 0)
-        if np.any(zero_std_mask):
-            self._stds[zero_std_mask] = 1e-8
-
-
+        pass
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -378,7 +199,7 @@ class NaiveNormalClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        prior=self._prior
+        pass
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -393,14 +214,7 @@ class NaiveNormalClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        x_arr=np.asarray(x,dtype=float)
-        if x_arr.shape[0] != self._num_features:
-            raise ValueError(f"Expected a {self._num_features}-dimensional input, got shape {x_arr.shape}.")
-
-        # calc the univariate Gaussian PDF for each feature:
-        per_feature_pdf = normal_pdf(x_arr, self._means, self._stds)  # shape = (d,)
-        likelihood = np.prod(per_feature_pdf)  # scalar
-
+        pass
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -414,9 +228,7 @@ class NaiveNormalClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        prior=self.get_prior()
-        liklyhood=self.get_instance_likelihood(x)
-        joint_prob=prior*liklyhood 
+        pass
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -437,16 +249,7 @@ class MAPClassifier():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        self.ccd0=ccd0
-        self.ccd1=ccd1
-        
-        #validating integrity 
-        if not (hasattr(self.ccd0, "class_value") and hasattr(self.ccd1, "class_value")):
-            raise ValueError("Each input must have a .class_value attribute.")
-        labels={self.ccd0.class_value, self.ccd1.class_value}
-        if labels != {0, 1}:
-            raise ValueError(f"Expected class_value 0 and 1, got {labels}.")
-
+        pass
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -464,11 +267,7 @@ class MAPClassifier():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        # calc joint P(Y=0, X=x) and P(Y=1, X=x)
-        joint0 = self.ccd0.get_instance_joint_prob(x)
-        joint1 = self.ccd1.get_instance_joint_prob(x)
-
-        pred=0 if joint0>joint1 else 1
+        pass
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -491,34 +290,7 @@ def multi_normal_pdf(x, mean, cov):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    x_arr = np.asarray(x, dtype=float)
-    mu_arr = np.asarray(mean, dtype=float)
-    cov_mat = np.asarray(cov, dtype=float)
-
-    #validate dimentions
-    d = mu_arr.shape[0]
-    if x_arr.shape[0] != d:
-        raise ValueError(f"Dimension mismatch: x has length {x_arr.shape[0]}, mean has length {d}.")
-    if cov_mat.shape != (d, d):
-        raise ValueError(f"Covariance matrix must be {d}x{d}, but got {cov_mat.shape}.")
-
-    #calc determinant
-    det_cov = np.linalg.det(cov_mat)
-    if det_cov <= 0:
-        raise ValueError("Covariance matrix must be positive definite (determinant > 0).")
-
-    #calc inverse of covar matrix
-    inv_cov = np.linalg.inv(cov_mat)
-
-    # normalization constant: (2π)^(-d/2) * |cov|^(-1/2)
-    norm_const = (2.0 * np.pi) ** (-d / 2) * det_cov ** (-0.5)
-
-    #exponent: −½ (x−mean)^T cov^(-1) (x−mean)
-    diff = x_arr - mu_arr
-    exponent = -0.5 * diff.dot(inv_cov).dot(diff)
-
-    pdf = norm_const * np.exp(exponent)
-    pdf=float(pdf)
+    pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -540,44 +312,7 @@ class MultiNormalClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-         # Split features and labels
-        X = dataset[:, :-1]    # shape = (N, d)
-        Y = dataset[:, -1]     # shape = (N,)
-
-        # filter to only those rows with label == class_value
-        mask = (Y == class_value)
-        X_given_y = X[mask]    # shape = (N_y, d)
-        N_y = X_given_y.shape[0]
-        N_total = dataset.shape[0]
-
-        # calc prior P(Y = class_value)
-        if N_y == 0:
-            raise ValueError(f"No training examples with label {class_value!r}.")
-        self._prior = float(N_y) / float(N_total)
-        
-        # Number of features (d)
-        self._num_features = X.shape[1]
-        
-        # Estimate mean vector (length d)
-        self._mean = X_given_y.mean(axis=0)  # shape = (d,)
-        
-        # Estimate sample covariance matrix (d x d), dividing by (N_y - 1)
-        self._cov = np.cov(X_given_y, rowvar=False, bias=False)  # we use rowvar=False so that each column is a variable/feature. shape = (d, d)
-
-        # If cov is singular (determinant zero), we add a small epsilon so itll be positive
-        det_cov = np.linalg.det(self._cov)
-        if det_cov <= 0:
-            eps = 1e-8
-            cov_pos=self._cov.copy()
-            cov_pos[np.diag_indices(self._num_features)]+=eps
-            # Check determinant again; if still non-positive, keep increasing eps
-            while np.linalg.det(cov_pos) <= 0:
-                eps *= 10
-                cov_pos[np.diag_indices(self._num_features)] += eps
-            self._cov = cov_pos
-
-        self.class_value=class_value #storing class values
-
+        pass
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -590,10 +325,11 @@ class MultiNormalClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
+        pass
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
-        return self._prior
+        return prior
     
     def get_instance_likelihood(self, x):
         """
@@ -604,13 +340,7 @@ class MultiNormalClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        x_arr = np.asarray(x, dtype=float)
-        if x_arr.shape[0] != self._num_features:
-            raise ValueError(
-                f"Expected an input of length {self._num_features}, got length {x_arr.shape[0]}."
-            )
-         # we use the multi_normal_pdf function to compute P(X = x | Y = class_value)
-        likelihood=multi_normal_pdf(x_arr, self._mean, self._cov)
+        pass
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -624,8 +354,7 @@ class MultiNormalClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        joint_prob = self.get_prior() * self.get_instance_likelihood(x)
-
+        pass
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -648,24 +377,7 @@ def compute_accuracy(test_set, map_classifier):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    # num of test examples
-    N_test = test_set.shape[0]
-    if N_test == 0:
-        return 0.0
-    
-    # split features vs. true labels
-    X_test = test_set[:, :-1]
-    Y_true = test_set[:, -1]
-
-    # summing correct predictions
-    correct = 0
-    for i in range(N_test):
-        x_i = X_test[i]
-        y_pred = map_classifier.predict(x_i)
-        if y_pred == Y_true[i]:
-            correct += 1
-
-    acc = float(correct) / float(N_test)       
+    pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -686,41 +398,7 @@ class DiscreteNBClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-         # Split into X (features) and Y (labels)
-        X = dataset[:, :-1]
-        Y = dataset[:, -1]
-        self.class_value = class_value
-
-        # Select only the rows with Y = class_value
-        mask = (Y == class_value) #1D array of 0,1 lables 
-        X_given_y = X[mask]
-        self.N_y = X_given_y.shape[0]
-        N_total    = dataset.shape[0]  
-
-        self._prior = self.N_y / float(N_total)
-
-        # Number of features
-        self._num_features = X.shape[1]
-
-        # For each feature, build:
-        #  - V_i = unique values in the entire training set
-        #  - count_{i,v} = # of times X_i=v among X_given_y
-        #  - P[X_i=v | Y=y] = (count_{i,v} + 1) / (N_y + |V_i|)
-        self._V_sizes       = []   # |V_i| for each X_i
-        self._feature_probs = []   # list of dicts: for each i, map v → P[X_i=v|Y=j]
-
-        for i in range(self._num_features):
-            values=np.unique(X[:,i])
-            V_i=len(values)
-            self._V_sizes.append(V_i)
-
-            counts={v:np.sum(X_given_y[:,i]==v) for v in values}
-
-            denomenator=self.N_y + V_i
-            probs = {v:(counts[v]+1)/denomenator for v in values}
-
-            self._feature_probs.append(probs)
-
+        pass
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -733,7 +411,7 @@ class DiscreteNBClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        prior=self._prior
+        pass
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -743,28 +421,12 @@ class DiscreteNBClassDistribution():
         """
         Returns the likelihood of the instance given the class label according to
         the product of feature-specific discrete class conidtionals fitted to the training data.
-        
-        Return P(X = x | Y = class_value) = ∏ₜ P[Xₜ = xₜ | Y = class_value].
-
         """
         likelihood = None
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        x_arr=np.asarray(x)
-        if x_arr.shape[0]!=self._num_features:
-            raise ValueError(f"Excpected {self._num_features}-dim input, got {x.arr.shape}")
-        
-        likes=[]
-        for i,v in enumerate(x_arr):
-            probs_i=self._feature_probs[i]
-            #in case i was never seen in the training set, count=0+1 smoothing
-            if i in probs_i:
-                likes.append(probs_i[v])
-            else:
-                likes.append(1.0/(self.N_y + self._V_sizes[i]))
-
-        likelihood=float(np.prod(likes))
+        pass
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -778,7 +440,7 @@ class DiscreteNBClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        joint_prob=self.get_prior()*self.get_instance_likelihood(x)
+        pass
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
