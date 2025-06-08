@@ -202,36 +202,36 @@ class conditional_independence():
         self.C = {0: 0.5, 1: 0.5}  # P(C=c)
 
         self.X_Y = {
-            (0, 0): 0.18,   # P(X=0, Y=0) = P(X=0,Y=0,C=0) + P(X=0,Y=0,C=1) = 0.18 + 0 = 0.18
-            (0, 1): 0.12,   # P(X=0, Y=1) = 0.12 + 0 = 0.12
-            (1, 0): 0.12,   # P(X=1, Y=0) = 0.12 + 0 = 0.12
-            (1, 1): 0.58    # P(X=1, Y=1) = 0.08 + 0.50 = 0.58
-        }  # P(X=x, Y=y)
+            (0, 0): 0.06,
+            (0, 1): 0.24,
+            (1, 0): 0.24,
+            (1, 1): 0.46
+        }
 
         self.X_C = {
-            (0, 0): 0.30, # For C = 0:  P(X=0,C=0) = 0.18 + 0.12 = 0.30
-            (0, 1): 0.00, # For C = 1:  P(X=0,C=1) = 0 + 0 = 0
-            (1, 0): 0.20, # P(X=1,C=0) = 0.12 + 0.08 = 0.20
-            (1, 1): 0.50  # P(X=1,C=1) = 0 + 0.50 = 0.50
-        }  # P(X=x, C=c)
+            (0, 0): 0.10,
+            (0, 1): 0.20,
+            (1, 0): 0.40,
+            (1, 1): 0.30
+        }
 
         self.Y_C = {
-            (0, 0): 0.30, # For C = 0:  P(Y=0,C=0) = 0.18 + 0.12 = 0.30
-            (0, 1): 0.00, # For C = 1:  P(Y=0,C=1) = 0 + 0 = 0
-            (1, 0): 0.20, # P(Y=1,C=0) = 0.12 + 0.08 = 0.20
-            (1, 1): 0.50  # P(Y=1,C=1) = 0 + 0.50 = 0.50
-        }  # P(Y=y, C=c)
+            (0, 0): 0.30,
+            (0, 1): 0.00,
+            (1, 0): 0.20,
+            (1, 1): 0.50
+        }
 
         self.X_Y_C = {
-            (0, 0, 0): 0.18, # P(X=0,Y=0,C=0) = 0.5 * (0.6 * 0.6) = 0.5·0.36 = 0.18
-            (0, 0, 1): 0.00, # P(X=0,Y=0,C=1) = 0.5 * (0.0 * 0.0) = 0.5·0.0 = 0.0
-            (0, 1, 0): 0.12, # P(X=0,Y=1,C=0) = 0.5 * (0.6 * 0.4) = 0.5·0.24 = 0.12
-            (0, 1, 1): 0.00, # P(X=0,Y=1,C=1) = 0.5 * (0.0 * 1.0) = 0.5·0.0 = 0.0
-            (1, 0, 0): 0.12, # P(X=1,Y=0,C=0) = 0.5 * (0.4 * 0.6) = 0.5·0.24 = 0.12
-            (1, 0, 1): 0.00, # P(X=1,Y=0,C=1) = 0.5 * (1.0 * 0.0) = 0.5·0.0 = 0.0
-            (1, 1, 0): 0.08, # P(X=1,Y=1,C=0) = 0.5 * (0.4 * 0.4) = 0.5·0.16 = 0.08
-            (1, 1, 1): 0.50, # P(X=1,Y10,C=1) = 0.5 * (1.0 * 1.0) = 0.5·1 = 0.5
-        }  # P(X=x, Y=y, C=c)
+            (0, 0, 0): 0.06,
+            (0, 1, 0): 0.04,
+            (1, 0, 0): 0.24,
+            (1, 1, 0): 0.16,
+            (0, 0, 1): 0.00,
+            (0, 1, 1): 0.20,
+            (1, 0, 1): 0.00,
+            (1, 1, 1): 0.30
+        }
 
     def is_X_Y_dependent(self):
         """
@@ -245,9 +245,9 @@ class conditional_independence():
         ###########################################################################    
         
         # check for any (x,y) if P(X=x, Y=y) != P(X=x)*P(Y=y):
-        for x in [0, 1]:
-            for y in [0, 1]:
-                if not np.isclose(X_Y[(x, y)], X[x] * Y[y]):
+        for x in X:
+            for y in Y:
+                if X_Y[(x, y)]!= X[x] * Y[y]:
                     return True  # we found marginal dependence
                 
         # If we never returned True, then X and Y would be marginally independent.
@@ -270,9 +270,9 @@ class conditional_independence():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        for c in [0, 1]:
-            for x in [0, 1]:
-                for y in [0, 1]:
+        for c in C:
+            for x in X:
+                for y in Y:
                     lhs = X_Y_C[(x, y, c)]/C[c]
                     # as p(x|c) = P(X=x, C=c)/P(C=c), we can calc it as:
                     p_x_given_c = X_C[(x, c)] / C[c]
@@ -306,12 +306,12 @@ def normal_pdf(x, mean, std):
     x_arr=np.asarray(x,dtype=float)
 
     # normalization constant: 1/sqrt(2*pi*std^2)
-    denomenator=std*np.sqrt(2.0*np.pi)
+    denominator=std*np.sqrt(2.0*np.pi)
 
     #exponent term- exp(-(x-mean)^2 / (2*std^2))
     exponent=-0.5 * ((x_arr-mean)/std)**2
 
-    p=(1/denomenator)*np.exp(exponent)
+    p=(1/denominator)*np.exp(exponent)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -372,7 +372,7 @@ class NaiveNormalClassDistribution():
     
     def get_prior(self):
         """
-        Returns the prior porbability of the class, as computed from the training data.
+        Returns the prior probability of the class, as computed from the training data.
         """
         prior = None
         ###########################################################################
@@ -561,9 +561,7 @@ class MultiNormalClassDistribution():
         # Estimate mean vector (length d)
         self._mean = X_given_y.mean(axis=0)  # shape = (d,)
         
-        # Estimate sample covariance matrix (d x d), dividing by (N_y - 1)
-        self._cov = np.cov(X_given_y, rowvar=False, bias=False)  # we use rowvar=False so that each column is a variable/feature. shape = (d, d)
-
+        self._cov = np.cov(X_given_y, rowvar=False, bias=True)  
         # If cov is singular (determinant zero), we add a small epsilon so itll be positive
         det_cov = np.linalg.det(self._cov)
         if det_cov <= 0:
@@ -573,6 +571,7 @@ class MultiNormalClassDistribution():
             # Check determinant again; if still non-positive, keep increasing eps
             while np.linalg.det(cov_pos) <= 0:
                 eps *= 10
+                cov_pos = self._cov.copy()
                 cov_pos[np.diag_indices(self._num_features)] += eps
             self._cov = cov_pos
 
@@ -584,7 +583,7 @@ class MultiNormalClassDistribution():
         
     def get_prior(self):
         """
-        Returns the prior porbability of the class, as computed from the training data.
+        Returns the prior probability of the class, as computed from the training data.
         """
         prior = None
         ###########################################################################
@@ -716,8 +715,8 @@ class DiscreteNBClassDistribution():
 
             counts={v:np.sum(X_given_y[:,i]==v) for v in values}
 
-            denomenator=self.N_y + V_i
-            probs = {v:(counts[v]+1)/denomenator for v in values}
+            denominator=self.N_y + V_i
+            probs = {v:(counts[v]+1)/denominator for v in values}
 
             self._feature_probs.append(probs)
 
@@ -727,7 +726,7 @@ class DiscreteNBClassDistribution():
     
     def get_prior(self):
         """
-        Returns the prior porbability of the class, as computed from the training data.
+        Returns the prior probability of the class, as computed from the training data.
         """
         prior = None
         ###########################################################################
@@ -753,13 +752,13 @@ class DiscreteNBClassDistribution():
         ###########################################################################
         x_arr=np.asarray(x)
         if x_arr.shape[0]!=self._num_features:
-            raise ValueError(f"Excpected {self._num_features}-dim input, got {x.arr.shape}")
+            raise ValueError(f"Expected {self._num_features}-dim input, got {x_arr.shape}")
         
         likes=[]
         for i,v in enumerate(x_arr):
             probs_i=self._feature_probs[i]
-            #in case i was never seen in the training set, count=0+1 smoothing
-            if i in probs_i:
+            #in case v was never seen in the training set, count=0+1 smoothing
+            if v in probs_i:
                 likes.append(probs_i[v])
             else:
                 likes.append(1.0/(self.N_y + self._V_sizes[i]))
